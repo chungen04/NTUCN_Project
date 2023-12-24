@@ -2,6 +2,7 @@
 from flask import Flask, render_template, Response
 from pydub import AudioSegment
 import cv2
+import numpy as np
 
 app = Flask(__name__)
 
@@ -14,25 +15,22 @@ def generate_video():
         if not success:
             break
         resized_frame = cv2.resize(frame, (640, 480))
-        _, buffer = cv2.imencode('.jpg', resized_frame)
+        _, buffer = cv2.imencode('.jpg', resized_frame, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
 
         frame_bytes = buffer.tobytes()
 
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n\r\n')
 
-# Audio streaming
 def generate_audio():
-    audio_file = "./audio.mp3"  # Replace with the path to your audio file
-    audio = AudioSegment.from_file(audio_file, format="mp3")
-
-    # Convert audio to raw data
-    audio_data = audio.raw_data
-
-    # Yield chunks of audio data
-    chunk_size = 1024
-    for i in range(0, len(audio_data), chunk_size):
-        yield audio_data[i:i+chunk_size]
+    audio_file_path = "./audio.mp3"
+    audio = AudioSegment.from_file(audio_file_path, format="mp3")
+    compressed_options = {"codec": "flac", "parameters": ["-compression_level", "8"]}
+    compressed_audio = audio.export(format="flac", codec=compressed_options["codec"], parameters=compressed_options["parameters"])
+    compressed_audio_data = compressed_audio.read(1024)
+    while compressed_audio_data:
+        yield compressed_audio_data
+        compressed_audio_data = compressed_audio.read(1024)
 
 @app.route('/')
 def index():
