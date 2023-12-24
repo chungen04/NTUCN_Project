@@ -9,6 +9,12 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import DataRequired, EqualTo
+import socket
+import threading
+import select
+import base64
+import hashlib
+import re
 
 app = Flask(__name__)
 
@@ -147,7 +153,79 @@ def logout():
     response.delete_cookie('user_id')
     return response
 
-if __name__ == '__main__':
+def handle_client(client_socket):
+    request = client_socket.recv(1024)  # Receive data from the client (adjust buffer size as needed)
+    print(f"Received data: {request.decode('utf-8')}")
+    client_socket.close()
+
+def decode_websocket_msg(data):
+    pos = 2
+    if data[1] == 254:
+        pos += 2
+    if data[1] == 255:
+        pos += 8
+    key = data[pos:][:4]
+    pos += 4
+    payload = bytes(x ^ key[i % 4] for i, x in enumerate(data[pos:]))
+    return payload
+
+def start_message_server():
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.bind(('localhost', 5001))
+    server_socket.listen(5)
+
+    inputs = [server_socket]
+
+    while True:
+        readable, _, _ = select.select(inputs, [], [])
+        for s in readable:
+            if s is server_socket:
+                client_socket, _ = server_socket.accept()
+                inputs.append(client_socket)
+            else:
+                data = s.recv(1024)
+                if not data:
+                    inputs.remove(s)
+                    s.close()
+                else:
+                    payload = decode_websocket_msg(data)
+                    try: 
+                        # connection reques, so data.decode("utf-8") is valid
+                        if "Upgrade: websocket" in data.decode("utf-8"):
+                            websocket_answer = (
+                                'HTTP/1.1 101 Switching Protocols',
+                                'Upgrade: websocket',
+                                'Connection: Upgrade',
+                                'Sec-WebSocket-Accept: {key}\r\n\r\n',
+                            )
+                            key_match = re.search('Sec-WebSocket-Key:\s+(.*?)[\n\r]+', data.decode("utf-8"))
+                            if key_match:
+                                key = key_match.group(1).strip()
+                                GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+                                # Encode key and GUID as bytes before hashing
+                                response_key = base64.b64encode(hashlib.sha1((key + GUID).encode('utf-8')).digest()).decode('utf-8')
+                                response = '\r\n'.join(websocket_answer).format(key=response_key)
+                                s.send(response.encode('utf-8'))
+                                print(f"connection established, sending handshake \n{response}")
+                    except:
+                        # connection already set, payload is encoded message
+                        payload = payload.decode("utf-8")
+                        print(payload)
+
+def start_server():
     with app.app_context():
-        db.create_all()    
-    app.run(host="0.0.0.0", port=5000)
+        db.create_all()  
+    app.run(host="0.0.0.0", port=5000)  
+
+if __name__ == '__main__':
+    # Create threads
+    server_thread = threading.Thread(target=start_server)
+    message_thread = threading.Thread(target=start_message_server)
+
+    # Start threads
+    server_thread.start()
+    message_thread.start()
+
+    # Wait for threads to finish
+    server_thread.join()
+    message_thread.join()

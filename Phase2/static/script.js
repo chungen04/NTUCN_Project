@@ -24,6 +24,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Attach the refreshAudio function to the audio refresh button click event
     refreshAudioButton.addEventListener('click', refreshAudio);
+
+    function onFormSubmit(event) {
+        event.preventDefault();  // Prevent the default form submission
+        const message = document.getElementById('messageInput').value;
+        console.log(message);
+        sendMessage(message);
+    }
+
+    // Attach the onFormSubmit function to the form submission event
+    document.querySelector('form').addEventListener('submit', onFormSubmit);
 });
 
 // logout.js
@@ -31,4 +41,17 @@ function logout() {
     // You can use JavaScript to make an AJAX request or redirect to the logout route.
     // Here, I'm using a simple redirect.
     window.location.href = "/logout"; // Adjust the path as needed
+}
+
+// for message board
+const socket = new WebSocket('ws://localhost:5001');  // WebSocket connection to the server
+
+// Function to send a message to the server
+function sendMessage(message) {
+    // Check if the WebSocket connection is open
+    if (socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ message: message }));
+    } else {
+        console.error('WebSocket is not open.');
+    }
 }
