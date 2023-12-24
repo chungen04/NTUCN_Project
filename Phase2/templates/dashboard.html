@@ -7,6 +7,10 @@
 </head>
 <body>
     <div class="container">
+        <h1>Welcome to the Dashboard, {{ username }}!</h1>
+        <p>Login Count: {{ login_count }}</p>
+    </div>
+    <div class="container">
         <div class="video-container">
             <h1>Video Streaming</h1>
             <img id="videoFrame" src="{{ url_for('video_feed') }}" alt="Video Frame">
@@ -19,6 +23,10 @@
                 Your Browser does not support the audio element.
             </audio>
             <button id="refreshAudioButton">Refresh Audio</button>
+        </div>
+        <div class="logout-container">
+            <h1>Logout</h1>
+            <button id="logoutButton" onclick="logout()">Logout</button>
         </div>
     </div>
     <script src="{{ url_for('static', filename='script.js') }}" defer></script>

@@ -25,3 +25,10 @@ document.addEventListener('DOMContentLoaded', function () {
     // Attach the refreshAudio function to the audio refresh button click event
     refreshAudioButton.addEventListener('click', refreshAudio);
 });
+
+// logout.js
+function logout() {
+    // You can use JavaScript to make an AJAX request or redirect to the logout route.
+    // Here, I'm using a simple redirect.
+    window.location.href = "/logout"; // Adjust the path as needed
+}
