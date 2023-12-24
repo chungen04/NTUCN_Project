@@ -1,17 +1,25 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Video Streaming</title>
-    <script>
-        var base_url = "{{ url_for('static', filename='') }}";
-    </script>
-    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+    <title>Video and Audio Streaming</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <h1>Video Streaming Example</h1>
-    <img id="videoFrame" src="{{ url_for('video_feed') }}" alt="Video Frame">
-    <button id="refreshButton">Refresh Video</button>
+    <div class="container">
+        <div class="video-container">
+            <h1>Video Streaming</h1>
+            <img id="videoFrame" src="{{ url_for('video_feed') }}" alt="Video Frame">
+            <button id="refreshVideoButton">Refresh Video</button>
+        </div>
+        <div class="audio-container">
+            <h1>Audio Streaming</h1>
+            <audio controls id="audioPlayer">
+                <source src="{{ url_for('audio_feed') }}" type="audio/mp3">
+            </audio>
+            <button id="refreshAudioButton">Refresh Audio</button>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </body>
 </html>

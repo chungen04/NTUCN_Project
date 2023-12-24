@@ -1,15 +1,27 @@
-// script.js
+// static/script.js
 document.addEventListener('DOMContentLoaded', function () {
-    // Get references to the image and button
+    // Get references to the video and audio elements
     var videoFrame = document.getElementById('videoFrame');
-    var refreshButton = document.getElementById('refreshButton');
+    var refreshVideoButton = document.getElementById('refreshVideoButton');
+    
+    var audioPlayer = document.getElementById('audioPlayer');
+    var refreshAudioButton = document.getElementById('refreshAudioButton');
 
-    // Function to refresh the image source
+    // Function to refresh the video source
     function refreshVideo() {
-        // Append a timestamp to the image source URL to force a refresh
+        // Append a timestamp to the video source URL to force a refresh
         videoFrame.src = "video_feed?timestamp=" + new Date().getTime();
     }
 
-    // Attach the refreshVideo function to the button click event
-    refreshButton.addEventListener('click', refreshVideo);
+    // Function to refresh the audio source
+    function refreshAudio() {
+        // Reload the audio player
+        audioPlayer.load();
+    }
+
+    // Attach the refreshVideo function to the video refresh button click event
+    refreshVideoButton.addEventListener('click', refreshVideo);
+
+    // Attach the refreshAudio function to the audio refresh button click event
+    refreshAudioButton.addEventListener('click', refreshAudio);
 });
