@@ -23,16 +23,22 @@ def generate_video():
 
 # Audio streaming
 def generate_audio():
-    audio_file = "./audio.mp3"  # Replace with the path to your audio file
-    audio = AudioSegment.from_file(audio_file, format="mp3")
+    # audio_file = "./audio.mp3"  # Replace with the path to your audio file
+    # audio = AudioSegment.from_file(audio_file, format="mp3")
 
-    # Convert audio to raw data
-    audio_data = audio.raw_data
+    # # Convert audio to raw data
+    # audio_data = audio.raw_data
 
-    # Yield chunks of audio data
-    chunk_size = 1024
-    for i in range(0, len(audio_data), chunk_size):
-        yield audio_data[i:i+chunk_size]
+    # # Yield chunks of audio data
+    # chunk_size = 1024
+    # for i in range(0, len(audio_data), chunk_size):
+    #     yield audio_data[i:i+chunk_size]
+    
+    with open("./audio.mp3", "rb") as fwav:
+        data = fwav.read(1024)
+        while data:
+            yield data
+            data = fwav.read(1024)
 
 @app.route('/')
 def index():
