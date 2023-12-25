@@ -1,5 +1,5 @@
 # app.py
-from flask import Flask, render_template, Response, redirect, url_for, session, request
+from flask import Flask, render_template, Response, redirect, url_for, session, request, jsonify
 from pydub import AudioSegment
 import cv2
 import numpy as np
@@ -15,8 +15,12 @@ import select
 import base64
 import hashlib
 import re
+import json
+from sqlalchemy.orm import sessionmaker
+from flask_caching import Cache
 
 app = Flask(__name__)
+cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
 app.secret_key = 'g/I^+v(&Z@Y@:j('
 def is_logged_in(session):
@@ -82,7 +86,11 @@ class RegisterForm(FlaskForm):
     confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
     submit = SubmitField('Register')
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///default.db'
+app.config['SQLALCHEMY_BINDS'] = {
+    'users': 'sqlite:///users.db',
+    'messages': 'sqlite:///messages.db'
+}
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -92,9 +100,15 @@ class User(db.Model):
     password_hash = db.Column(db.String(128), nullable=False)
     login_count = db.Column(db.Integer, default=0)  # New column for login count
 
+class Message(db.Model):
+    __bind_key__ = 'messages'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), nullable=False)
+    message = db.Column(db.String(255), nullable=False)
+
+
 @app.route('/')
 def home():
-    # Redirect to the login page
     return redirect(url_for('login'))
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -147,16 +161,10 @@ def login():
 @app.route('/logout')
 def logout():
     flash('Logged out successfully.', 'info')
-    # Clear the user_id cookie to log out
     session.pop('user_id', None)
     response = redirect(url_for('home'))
     response.delete_cookie('user_id')
     return response
-
-def handle_client(client_socket):
-    request = client_socket.recv(1024)  # Receive data from the client (adjust buffer size as needed)
-    print(f"Received data: {request.decode('utf-8')}")
-    client_socket.close()
 
 def decode_websocket_msg(data):
     pos = 2
@@ -208,24 +216,70 @@ def start_message_server():
                                 s.send(response.encode('utf-8'))
                                 print(f"connection established, sending handshake \n{response}")
                     except:
-                        # connection already set, payload is encoded message
-                        payload = payload.decode("utf-8")
-                        print(payload)
+                        # connection already set, payload is an encoded message
+                        with app.app_context():
+                            Session = sessionmaker(bind=db.get_engine(app, bind='messages'))
+                            session = Session()
+                            try:
+                                payload = payload.decode("utf-8")
+                                print(payload)
+                                data = json.loads(payload)
+
+                                # Extract username and message
+                                username = data.get("username")
+                                message = data.get("message")
+
+                                # Use the extracted data to update the Message table
+                                if username and message:
+                                    new_message = Message(username=username, message=message)
+                                    session.add(new_message)
+                                    session.commit()
+                            except json.JSONDecodeError:
+                                pass
+                            except Exception as e:
+                                # this exception probably means socket is closed from
+                                print(f"Exception: {e}")
+                                inputs.remove(s)
+                                s.close()
+                            finally:
+                                session.close()
+
+@app.route('/get-messages', methods=['GET'])
+@cache.cached(timeout=3)
+def get_messages():
+    with app.app_context():
+        Session = sessionmaker(bind=db.get_engine(app, bind='messages'))
+        session = Session()
+        try:
+            # Retrieve all messages from the Message table
+            messages = session.query(Message).all()
+            messages_list = []
+            for msg in messages:
+                messages_list.append({
+                    'id': msg.id,
+                    'username': msg.username,
+                    'message': msg.message
+                })
+            return jsonify(messages_list)
+
+        except Exception as e:
+            print(f"Exception: {e}")
+            return jsonify({'error': 'Internal Server Error'}), 500
+
+        finally:
+            session.close()
 
 def start_server():
     with app.app_context():
-        db.create_all()  
-    app.run(host="0.0.0.0", port=5000)  
+        db.create_all()
+    app.run(host="0.0.0.0", port=5000)
 
 if __name__ == '__main__':
-    # Create threads
     server_thread = threading.Thread(target=start_server)
     message_thread = threading.Thread(target=start_message_server)
 
-    # Start threads
     server_thread.start()
     message_thread.start()
 
-    # Wait for threads to finish
     server_thread.join()
     message_thread.join()

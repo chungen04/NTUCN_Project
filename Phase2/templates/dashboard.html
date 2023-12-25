@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Video and Audio Streaming</title>
+    <title>Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
+    <div id="username" style="display: none;">{{ username }}</div>
     <div class="container">
         <h1>Welcome to the Dashboard, {{ username }}!</h1>
         <p>Login Count: {{ login_count }}</p>
@@ -23,6 +24,10 @@
                 Your Browser does not support the audio element.
             </audio>
             <button id="refreshAudioButton">Refresh Audio</button>
+        </div>
+        <div class="message-container">
+            <h1>Messages</h1>
+            <ul id="messageList"></ul>
         </div>
         <div class="logout-container">
             <h1>Logout</h1>

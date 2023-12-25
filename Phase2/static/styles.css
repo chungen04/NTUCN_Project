@@ -1,26 +1,94 @@
 /* static/styles.css */
 body {
     font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
 }
 
 .container {
+    background-color: #fff;
+    padding: 20px;
+    margin: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     display: flex;
-    justify-content: space-around;
+    flex-direction: column;
     align-items: center;
-    height: 100vh;
+}
+
+h1 {
+    color: #333;
+}
+
+p {
+    color: #777;
 }
 
 .video-container,
-.audio-container {
+.audio-container,
+.message-container,
+.logout-container,
+form {
+    margin-top: 20px;
+    width: 100%;
+    max-width: 600px; /* Adjust the max-width as needed */
+}
+
+.video-container,
+.audio-container,
+.logout-container,
+.message-container {
     text-align: center;
 }
 
 img {
     max-width: 100%;
-    max-height: 100%;
+    height: auto;
+    border-radius: 8px;
 }
 
 audio {
     width: 100%;
     margin-top: 10px;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+label {
+    margin-bottom: 5px;
+    color: #333;
+}
+
+input {
+    padding: 8px;
+    margin-bottom: 10px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+button {
+    padding: 10px;
+    background-color: #4caf50;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#messageList {
+    list-style-type: none;
+    padding: 0;
+    margin-top: 20px;
+}
+
+#messageList li {
+    background-color: #ddd;
+    padding: 10px;
+    margin-bottom: 5px;
+    border-radius: 5px;
 }
